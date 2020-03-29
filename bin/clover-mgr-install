@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+import json
+import shlex
+import os
+import sys
+
+CONFIG_PATH = "./config.json"
+
+def confirm():
+    yes = {'yes','y', 'ye', ''}
+    no = {'no','n'}
+
+    result = None
+    while result is None:
+        choice = input().lower()
+        if choice in yes:
+           result = True 
+        elif choice in no:
+           result = False
+        else:
+           sys.stdout.write("Please respond with 'yes' or 'no'")
+
+    return result
+
+class Config:
+    def __init__(self, path):
+        dict = None
+        with open(path) as file:
+            self.dict = dict = json.load(file)
+
+        self.target = dict["target"]
+        self.keep_backups = dict["keep_backups"]
+        self.unmount_target_disk = dict["unmount_target_disk"]
+        self.name = os.path.basename(os.getcwd())
+
+    def __str__(self):
+        return str(self.dict)
+
+config = Config(CONFIG_PATH)
+
+if config.unmount_target_disk:
+    print("Not yet supported (TODO!)")
+    exit(1)
+
+# mount
+mount_path = f"/Volumes/{os.path.dirname(os.getcwd())}"
+mount_path = os.path.join("/Volumes", f"{config.name}-EFI")
+os.system(f"sudo mkdir -p {mount_path} && sudo diskutil mount -mountPoint {mount_path} {shlex.quote(config.target)}")
+
+# backup current target in config.keep_backups
+
+# replace target with source
+
+
+# unmount
+try_unmount = True
+while try_unmount:
+    ret = os.system(f"sudo diskutil unmountDisk {shlex.quote(config.target)}")
+
+    try_unmount = False
+    if ret is not 0:
+        print("Unable to unmount disk. Retry? (no/yes)")
+        try_unmount = confirm()
